@@ -9,3 +9,5 @@ CBANE allows a select number of archived networks to "travel" to active clusters
 CBANE also supports & encourages periodic merging & reclustering to promote network diversity and combat global stagnation.
 
 CBANE also encourages distributed computing and diversified training sets via the concept of superclusters.
+
+This project represents a .NET Core implementation of CBANE, providing a library implmenting the core concepts of CBANE, and a sandpit that includes and example of the library in use.
