@@ -4,7 +4,7 @@ CBANE is an approach to neuro-evolution that attempts to preserve innovation and
 
 Rather than culling solely based on the pool wide performance of networks during the last evaluation cycle, CBANE only culls within a cluster, and if a network does not fit in to any active cluster (based on configured caps), it is temporarily archived rather than culled.
 
-CBANE allows a select number of archived networks to "travel" to active clusters each cycle to continue their evolution.
+CBANE allows a select number of archived networks to "travel" to active clusters each cycle to continue their evolution. Travelling is heavily biased towards weak (low scoring) archived networks that are less likely to become cluster references in future cycles. Travelling is therefore primarily a mechanism to help keep the gene pool in each cluster diverse.
 
 CBANE also supports & encourages periodic merging & reclustering to promote network diversity and combat global stagnation.
 
