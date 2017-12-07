@@ -146,6 +146,21 @@ namespace CBANE.Core
             // If there are more networks in the archive than allowed, cull the weakest.
             while(this.NetworkArchive.Count > this.SuperclusterConfig.MaxArchivedNetworks)
                 this.NetworkArchive.RemoveAt(this.NetworkArchive.Count - 1);
+
+            // If for whatever reason there were not enough clusters created to fill the quota,
+            // create clusters with random networks to fill out the population.
+            while(this.Clusters.Count < this.SuperclusterConfig.MaxClusters)
+            {
+                var cluster = new Cluster(Guid.NewGuid().ToString(), this.ClusterConfig, this.NetworkConfig);
+
+                while(cluster.Networks.Count < this.ClusterConfig.MaxNetworks)
+                {
+                    var network = new Network(this.NetworkConfig.Clone(), NetworkOrigins.BOOTSTRAP, 0);
+                    network.RandomiseAxions();
+
+                    cluster.Networks.Add(network);
+                }
+            }
         }
 
         /// <summary>
