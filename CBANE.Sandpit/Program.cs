@@ -100,7 +100,7 @@ namespace CBANE.Sandpit
 
         static void PerformTrainingRun()
         {
-            Trainer.Train(5);
+            Trainer.Train(500);
 
             if(outputStatus != ProgramStatus.EXITING)
             {

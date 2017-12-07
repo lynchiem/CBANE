@@ -67,7 +67,7 @@ namespace CBANE.Core
 
                 while(travellerCandidates.Count < maxTravellers && this.NetworkArchive.Count > 0)
                 {
-                    var biasedIndex = (int)Math.Round(NEMath.RandomBetween(0, this.NetworkArchive.Count - 1, 2.5), 0);
+                    var biasedIndex = (int)Math.Round(NEMath.RandomBetween(0, this.NetworkArchive.Count - 1, 0.1), 0);
 
                     travellerCandidates.Add(this.NetworkArchive[biasedIndex]);
                     this.NetworkArchive.RemoveAt(biasedIndex);
