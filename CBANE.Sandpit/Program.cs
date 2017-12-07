@@ -16,6 +16,7 @@ namespace CBANE.Sandpit
         IDLE,
         TRAINING,
         TESTING,
+        STOPPING,
         EXITING
     }
 
@@ -29,6 +30,10 @@ namespace CBANE.Sandpit
 
         static void Main(string[] args)
         {
+            Console.WriteLine("CBANE SANDPIT");
+            Console.WriteLine("-------------------------");
+            Console.WriteLine("");
+
             var superclusterConfig = new SuperclusterConfig(5);
             var clusterConfig = new ClusterConfig(50, 0.20, 0.05);
             var networkConfig = new NetworkConfig(3, 2, 3, 12);
@@ -45,7 +50,7 @@ namespace CBANE.Sandpit
 
             outputStatus = ProgramStatus.IDLE;
 
-            var displayTask = Task.Run(() => ManageDisplay());
+            var outputTask = Task.Run(() => ManageOutput());
 
             Task trainingTask = null;
 
@@ -58,19 +63,28 @@ namespace CBANE.Sandpit
                     outputStatus = ProgramStatus.TRAINING;
                     trainingTask = Task.Run(() => PerformTrainingRun());
                 }
+                else if(outputStatus == ProgramStatus.TRAINING && keyInfo.Key == ConsoleKey.S)
+                {
+                    outputStatus = ProgramStatus.STOPPING;
+
+                    Trainer.StopTraining();
+
+                    if(trainingTask != null && !trainingTask.IsCompleted)
+                        trainingTask.Wait();
+
+                    outputStatus = ProgramStatus.IDLE;
+                }
                 else if(keyInfo.Key == ConsoleKey.X)
                 {
                     outputStatus = ProgramStatus.EXITING;
 
-                    if(trainingTask != null && !trainingTask.IsCompleted)
-                    {
-                        Trainer.StopTraining();
+                    Trainer.StopTraining();
 
+                    if(trainingTask != null && !trainingTask.IsCompleted)
                         trainingTask.Wait();
-                    }
                     
                     running = false;
-                    displayTask.Wait();
+                    outputTask.Wait();
                 }
             }
         }
@@ -89,7 +103,7 @@ namespace CBANE.Sandpit
             }
         }
 
-        static void ManageDisplay()
+        static void ManageOutput()
         {
             var previousStatus = ProgramStatus.UNKNOWN;
             var lastAutoUpdate = DateTime.Now.AddHours(-1);
@@ -105,7 +119,7 @@ namespace CBANE.Sandpit
                 if(outputStatus == ProgramStatus.TRAINING && previousStatus != ProgramStatus.TRAINING)
                 {
                     Console.WriteLine($"[{statusMessage}] Starting 500 cycle training run...");
-                    Console.WriteLine($"[{statusMessage}] Press [X] to exit.");
+                    Console.WriteLine($"[{statusMessage}] Press [S] to stop.");
                 }
 
                 if(outputStatus == ProgramStatus.TRAINING && (now - lastAutoUpdate).TotalMilliseconds > 1000 && Trainer.Cycle > lastTrainingCycle)
@@ -119,10 +133,16 @@ namespace CBANE.Sandpit
                     lastTrainingCycle = Trainer.Cycle;
                 }
 
+                if(outputStatus == ProgramStatus.STOPPING && previousStatus != ProgramStatus.STOPPING)
+                {
+                    string testingMessage = ProgramStatus.TRAINING.ToString().PadRight(8, '.');
+
+                    Console.WriteLine($"[{testingMessage}] Stopping training run...");
+                }
+
                 if(outputStatus == ProgramStatus.TESTING && previousStatus != ProgramStatus.TESTING)
                 {
                     Console.WriteLine($"[{statusMessage}] Testing networks...");
-                    Console.WriteLine($"[{statusMessage}] Press [X] to exit.");
                 }
 
                 if(outputStatus != ProgramStatus.TESTING && previousStatus == ProgramStatus.TESTING)
