@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 
+using Newtonsoft.Json;
+
 namespace CBANE.Core
 {
     public enum NetworkOrigins
@@ -46,6 +48,11 @@ namespace CBANE.Core
 
             this.ConstructNeurons();
             this.ConstructAxions();
+        }
+
+        public string GetAxionJson()
+        {
+            return JsonConvert.SerializeObject(this.Axions);
         }
 
         public void UpdateStrength(double strength)

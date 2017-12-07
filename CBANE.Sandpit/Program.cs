@@ -16,6 +16,7 @@ namespace CBANE.Sandpit
         IDLE,
         TRAINING,
         TESTING,
+        OUTPUT,
         STOPPING,
         EXITING
     }
@@ -63,6 +64,14 @@ namespace CBANE.Sandpit
                     outputStatus = ProgramStatus.TRAINING;
                     trainingTask = Task.Run(() => PerformTrainingRun());
                 }
+                else if(outputStatus == ProgramStatus.IDLE && keyInfo.Key == ConsoleKey.O)
+                {
+                    outputStatus = ProgramStatus.OUTPUT;
+                    
+                    OutputBestWeights();
+
+                    outputStatus = ProgramStatus.IDLE;
+                }
                 else if(outputStatus == ProgramStatus.TRAINING && keyInfo.Key == ConsoleKey.S)
                 {
                     outputStatus = ProgramStatus.STOPPING;
@@ -91,7 +100,7 @@ namespace CBANE.Sandpit
 
         static void PerformTrainingRun()
         {
-            Trainer.Train(500);
+            Trainer.Train(5);
 
             if(outputStatus != ProgramStatus.EXITING)
             {
@@ -100,6 +109,22 @@ namespace CBANE.Sandpit
                 Trainer.Evaluate(EvaluationMode.TESTING, true);
 
                 outputStatus = ProgramStatus.IDLE;
+            }
+        }
+
+        static void OutputBestWeights()
+        {
+            Trainer.Evaluate(EvaluationMode.TESTING, true);
+            Trainer.Supercluster.Cluster();
+
+            foreach(var cluster in Trainer.Supercluster.Clusters)
+            {
+                if(cluster.Networks.Count == 0)
+                    continue;
+
+                var bestNetwork = cluster.Networks.OrderByDescending(o => o.Strength).First();
+
+                File.WriteAllText($"data/outputs/{bestNetwork.UniqueId.ToString()}.json", bestNetwork.GetAxionJson());
             }
         }
 
@@ -155,9 +180,15 @@ namespace CBANE.Sandpit
                     Console.WriteLine(testingScoreMessage);
                 }
 
+                if(outputStatus == ProgramStatus.OUTPUT && previousStatus != ProgramStatus.OUTPUT)
+                {
+                    Console.WriteLine($"[{statusMessage}] Outputing best weights...");
+                }
+
                 if(outputStatus == ProgramStatus.IDLE && previousStatus != ProgramStatus.IDLE)
                 {
-                    Console.WriteLine($"[{statusMessage}] Press [T] to train. Press [X] to exit.");
+                    Console.WriteLine($"[{statusMessage}] Press [T] to train or [O] to output best weights.");
+                    Console.WriteLine($"[{statusMessage}] Press [X] to exit.");
                 }
 
                 if(outputStatus == ProgramStatus.EXITING && previousStatus != ProgramStatus.EXITING)
