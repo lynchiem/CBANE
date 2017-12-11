@@ -25,12 +25,17 @@ namespace CBANE.Sandpit
         public double BestTrainingScore { get; private set; }
         public double MaxTrainingScore { get; private set; }
 
+        public List<NormalisedExampleRecord> TestingDataset;
+        public List<NormalisedExampleRecord> TrainingDataset;
+
         private bool trainingEnable = false;
         private uint clusterRate;
         private uint mergingRate;
-        private List<NormalisedExampleRecord> testingDataset;
-        private List<NormalisedExampleRecord> trainingDataset;
         private int maxThreads;
+
+        private int maxAge;
+        private double maxSpendCategoryA;
+        private double maxSpendCategoryB;
 
         /// <summary>
         /// Construct a trainer to train a supercluster using the sandpit's example data.
@@ -49,20 +54,29 @@ namespace CBANE.Sandpit
             this.clusterRate = clusterRate;
             this.mergingRate = mergingRate;
 
+            // Load datasets.
             var testingDataset = this.LoadDatasetFromCSV("data/eg-testing-set.csv");
             var positiveTrainingDataset = this.LoadDatasetFromCSV("data/eg-training-set-positive.csv");
             var negativeTrainingDataset = this.LoadDatasetFromCSV("data/eg-training-set-negative.csv");
 
             var trainingDataset = positiveTrainingDataset.Concat(negativeTrainingDataset).ToList();
 
-            this.testingDataset = this.NormaliseDataset(testingDataset);
-            this.trainingDataset = this.NormaliseDataset(trainingDataset);
+            // Find max values for normalisation.
+            var completeDataset = trainingDataset.Concat(testingDataset);
+
+            this.maxAge = completeDataset.Max(o => o.Age);
+            this.maxSpendCategoryA = completeDataset.Max(o => o.SpendCategoryA);
+            this.maxSpendCategoryB = completeDataset.Max(o => o.SpendCategoryA);
+
+            // Normalise datasets.
+            this.TestingDataset = this.NormaliseDataset(testingDataset);
+            this.TrainingDataset = this.NormaliseDataset(trainingDataset);
 
             this.BestTestingScore = double.MinValue;
-            this.MaxTestingScore = this.testingDataset.Count;
+            this.MaxTestingScore = this.TestingDataset.Count;
 
             this.BestTrainingScore = double.MinValue;
-            this.MaxTrainingScore = this.trainingDataset.Count;
+            this.MaxTrainingScore = this.TrainingDataset.Count;
         }
 
         private List<ExampleRecord> LoadDatasetFromCSV(string filePath)
@@ -97,12 +111,8 @@ namespace CBANE.Sandpit
         {
             var normalisedRecords = new List<NormalisedExampleRecord>();
 
-            var maxAge = dataset.Max(o => o.Age);
-            var maxSpendCategoryA = dataset.Max(o => o.SpendCategoryA);
-            var maxSpendCategoryB = dataset.Max(o => o.SpendCategoryA);
-
             foreach(var record in dataset)
-                normalisedRecords.Add(new NormalisedExampleRecord(record, maxAge, maxSpendCategoryA, maxSpendCategoryB));
+                normalisedRecords.Add(new NormalisedExampleRecord(record, this.maxAge, this.maxSpendCategoryA, this.maxSpendCategoryB));
 
             return normalisedRecords.OrderBy(o => NEMath.Random()).ToList();
         }
@@ -153,7 +163,7 @@ namespace CBANE.Sandpit
 
         public void Evaluate(EvaluationMode evaluationMode, bool includeArchived = false)
         {
-            var dataset = (evaluationMode == EvaluationMode.TESTING) ? this.testingDataset : this.trainingDataset;
+            var dataset = (evaluationMode == EvaluationMode.TESTING) ? this.TestingDataset : this.TrainingDataset;
 
             for(var i = 0; i < this.Supercluster.Clusters.Count; i++)
             {

@@ -112,6 +112,26 @@ namespace CBANE.Sandpit
             }
         }
 
+        static void OutputPredictions(Network network)
+        {
+            List<string> outputLines = new List<string>();
+
+            foreach(var record in Trainer.TestingDataset)
+            {
+                network.Neurons[0][0].Input = 1.0; // Bias
+                network.Neurons[0][1].Input = record.Age;
+                network.Neurons[0][2].Input = record.SpendCategoryA;
+                network.Neurons[0][3].Input = record.SpendCategoryB;
+
+                var results = network.Query();
+                var predictAction = (results[0] > 0.5);
+
+                outputLines.Add($"{record.Age.ToString()}, {record.SpendCategoryA.ToString()}, {record.SpendCategoryB.ToString()}, {record.PerformedAction.ToString()}, {results[0].ToString()}, {predictAction.ToString()}");
+            
+                File.WriteAllLines($"data/outputs/{network.UniqueId.ToString()}-predictions.csv", outputLines.ToArray());
+            }
+        }
+
         static void OutputBestWeights()
         {
             Trainer.Evaluate(EvaluationMode.TESTING, true);
@@ -125,6 +145,8 @@ namespace CBANE.Sandpit
                 var bestNetwork = cluster.Networks.OrderByDescending(o => o.Strength).First();
 
                 File.WriteAllText($"data/outputs/{bestNetwork.UniqueId.ToString()}.json", bestNetwork.GetAxionJson());
+
+                OutputPredictions(bestNetwork);
             }
         }
 
