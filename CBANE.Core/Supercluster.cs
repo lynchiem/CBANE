@@ -160,6 +160,8 @@ namespace CBANE.Core
 
                     cluster.Networks.Add(network);
                 }
+
+                this.Clusters.Add(cluster);
             }
         }
 
